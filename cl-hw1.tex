@@ -1,0 +1,127 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{kotex}
+\usepackage{lmodern}
+\usepackage{cite}
+\usepackage{minted}
+
+\author{20193601 지준섭}
+\title{CS579 Homework\#1}
+
+\begin{document}
+
+\maketitle
+
+\section{Chapter 3}
+\textbf{Problem}: Extend the predicate travel/3 so that
+it not only tells you the route to take to get from one place to another,
+but also how you have to travel.
+That is, the new program should let us know,
+for each stage of the voyage,
+whether we need to travel by car, train, or plane. \\
+
+\noindent
+\textbf{Solution}:
+\begin{minted}[breaklines]{prolog}
+travel(X, Y, go(X, Y, car)) :- byCar(X, Y).
+travel(X, Y, go(X, Y, train)) :- byTrain(X, Y).
+travel(X, Y, go(X, Y, plane)) :- byPlane(X, Y).
+travel(X, Y, go(X, Z, car, Path)) :- byCar(X, Z), travel(Z, Y, Path).
+travel(X, Y, go(X, Z, train, Path)) :- byTrain(X, Z), travel(Z, Y, Path).
+travel(X, Y, go(X, Z, plane, Path)) :- byPlane(X, Z), travel(Z, Y, Path).
+\end{minted}
+
+\noindent
+We can find the path with the command \mintinline{prolog}{travel(X, Y, Path)}.
+For example:
+
+\begin{minted}[breaklines]{prolog}
+?- travel(valmont, singapore, Path).
+Path = go(valmont, saarbruecken, car, go(saarbruecken, frankfurt, train, go(frankfurt, singapore, plane))) ;
+Path = go(valmont, metz, car, go(metz, frankfurt, train, go(frankfurt, singapore, plane))) ;
+\end{minted}
+
+\noindent
+It means there are two paths from \textit{valmont} to \textit{singapore}:
+\begin{enumerate}
+  \item \textit{valmont} to \textit{saarbruecken} by car,
+    to \textit{frankfurt} by train, to \textit{singapore} by plane.
+  \item \textit{valmont} to \textit{metz} by car,
+    to \textit{frankfurt} by train, to \textit{singapore} by plane.
+\end{enumerate}
+
+\section{Chapter 4}
+\textbf{Problem}: write a 3-place predicate combine3
+which takes three lists as arguments and
+combines the elements of the first two lists into the third as follows:
+
+\begin{minted}[breaklines]{prolog}
+?- combine3([a,b,c],[1,2,3],X).
+X = [j(a,1),j(b,2),j(c,3)]
+?- combine3([f,b,yip,yup],[glu,gla,gli,glo],R).
+R = [j(f,glu),j(b,gla),j(yip,gli),j(yup,glo)]
+\end{minted}
+
+\noindent
+\textbf{Solution}:
+\begin{minted}[breaklines]{prolog}
+combine3([], [], []).
+combine3([Xh|Xt], [Yh|Yt], [j(Xh, Yh)|Zt]) :- combine3(Xt, Yt, Zt).
+\end{minted}
+
+\noindent
+And here is the output:
+\begin{minted}[breaklines]{prolog}
+?- combine3([a, b, c], [d, e, f], Z).
+Z = [j(a, d), j(b, e), j(c, f)].
+\end{minted}
+
+
+\section{Chapter 5}
+\textbf{Problem}: Write a 3-place predicate dot
+whose first argument is a list of integers,
+whose second argument is a list of integers
+of the same length as the first,
+and whose third argument is the dot product of the first argument
+with the second. \\
+
+\noindent
+\textbf{Solution}: Pop single number from each vector.
+Accumulate the value of multiplication.
+\begin{minted}[breaklines]{prolog}
+dot([], [], 0).
+dot([Xh|Xt], [Yh|Yt], Z) :- dot(Xt, Yt, Zz), Z is (Zz + (Xh * Yh)).
+\end{minted}
+
+\noindent
+And here is the output:
+\begin{minted}[breaklines]{prolog}
+?- dot([2, 5, 6], [3, 4, 1], Result).
+Result = 32.  
+\end{minted}
+
+\section{Chapter 6}
+\textbf{Problem}: Write a predicate flatten(List,Flat)
+that holds when the first argument List flattens to the second argument Flat.
+This should be done without making use of append/3. \\
+
+\noindent
+\textbf{Solution}:
+We use an accumulator to achieve the predicate
+without using \textbf{append} method.
+Head of the first argument can be an atomic element or a list,
+so both head and tail should be flattened recursively. 
+\begin{minted}[breaklines]{prolog}
+flatten(X, Y) :- accFlatten(X, [], Y).
+
+accFlatten([], Y, Y).
+accFlatten([Xh|Xt], Y, Z) :- accFlatten(Xh, A, Z), accFlatten(Xt, Y, A).
+accFlatten(X, Y, [X|Y]) :- [_|_] \= X, [] \= X.
+\end{minted}
+
+And here is the output:
+\begin{minted}[breaklines]{prolog}
+?- flatten([[1, 2, 3], 4, [5], 6, 7], F).
+F = [1, 2, 3, 4, 5, 6, 7] ;
+\end{minted}
+\end{document}

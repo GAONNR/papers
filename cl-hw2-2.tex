@@ -1,0 +1,93 @@
+\documentclass[11pt]{article}
+\usepackage[scale=0.75,twoside,bindingoffset=5mm,a4paper]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage{kotex}
+\usepackage{lmodern}
+\usepackage{cite}
+\usepackage{minted}
+
+\author{20193601 지준섭}
+\title{CS579 Homework\#2 -- Proposal \\
+\begin{large}
+  Automatic Debt Management System With Messenger Conversation
+\end{large}}
+
+\begin{document}
+
+\maketitle
+
+Type: \textit{implemented system with documentation}
+
+\section{Introduction}
+
+While belonging to a group, such as circle, laboratory, or the company,
+there is always a problem of financial relationship.
+The problem can be about a food ate together, a product purchased instead,
+or other important one.
+Building a system which saves those financial records, and shows summary
+would be useful.
+But in that case, users must learn how to register the records.
+So it would be much easier if we build a system that automatically
+extracts financial information from the conversation in the messenger.
+
+\section{Details}
+
+For the term project, we will build a system for a particular messenger
+-- \textit{Slack}.
+\textit{Slack} is a widespread messenger for groups,
+such as circles, laboratories, and the companies.
+It provides an API to access the messages,
+so people can easily build a bot when they need a specular functionality.
+In this project, our system will automatically analyze the chat,
+extracts financial information(e.g., debts and receivables)
+between the members in the group, and upload it to the server as a transaction.
+For sentence parsing, we plan to use libraries like
+\textit{node-swipl}, or \textit{pyswip}
+because the sentences will be crawled by \textit{node.js} or \textit{Python},
+and they will be parsed by \textit{SWI-prolog}.
+
+
+Also, our system will provide the summarization and the details
+of the financial relationship.
+The information will be provided as web page.
+The web page will be served by libraries like
+\textit{express.js}, or \textit{Flask}.
+
+\section{Scenario}
+
+\begin{enumerate}
+  \item \textbf{User requests money to other people} \\
+  For example, a user bought a dinner to eat with four people together,
+  (i.e., 5 people ate dinner together)
+  and want to request a money.
+  User can say ``Dinner is 50,000 won in total.'',
+  or ``Give me 10,000 won each.''.
+  The system should analyze both kind of request,
+  and assign a proper amount of money to the people.
+
+  \item \textbf{User want to notice he/she has paid debt} \\
+  After sending a proper money, user will say like
+  ``I just sent 10,000 won to you.'', or ``Sent 10,000 won to John.''.
+  For the first case, our system should find out who is `you'
+  and reduce the debt.
+
+  \item \textbf{User want to view the debt summary} \\
+  In this case user should access to the web page.
+  The page should show the summary of debt/receivables,
+  and detailed information of each transactions,
+  such as date, amount, item, and the person.
+\end{enumerate}
+
+\section{Requirements}
+\begin{enumerate}
+  \item The system should know whether the message is about money or not. 
+  \item The system should extract the amount of money in the message,
+  and calculate for each person.
+  \item The system should notice which word is the people's name,
+  and assign proper money to each person mentioned in the message.
+  \item The system must cover Slack, transactions database, and the webpage.
+  To achieve this, the system must have an ability to send/receive HTTP request.
+  Database must be set up to provide creditable records.
+\end{enumerate}
+
+\end{document}

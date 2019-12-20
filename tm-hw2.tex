@@ -1,0 +1,146 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{kotex}
+\usepackage{lmodern}
+\usepackage{cite}
+\usepackage{minted}
+
+\author{20193601 지준섭}
+\title{CS474 Homework\#2}
+
+\begin{document}
+
+\maketitle
+
+\section{Requirements}
+Python version \& libraries:
+\begin{itemize}
+  \item Python3
+  \item tqdm
+  \item spaCy
+  \item pandas
+  \item scikit-learn
+\end{itemize}
+
+Files:
+\begin{itemize}
+  \item CS474\_hw2\_train.csv
+  \item devised.py
+  \item tf-idf.py
+  \item termdisc.py
+  \item important\_terms\_50.json -- 50 important terms
+  \item tm-hw2.pdf -- documents
+\end{itemize}
+
+\section{Usage}
+\begin{minted}{bash}
+pip install tqdm spacy pandas scikit-learn
+python -m spacy download en_core_web_sm
+\end{minted}
+
+We need four files for execution:
+
+\begin{itemize}
+  \item CS474\_hw2\_train.csv
+  \item devised.py
+  \item tf-idf.py
+  \item termdisc.py
+\end{itemize}
+
+\begin{enumerate}
+  \item To test my custom entropy-based method:
+  \begin{minted}{bash}
+    python devised.py
+  \end{minted}
+  After execution, two files will be generated: \textbf{stats.json},
+  \textbf{important\_terms.json}.
+  The files contain useful information about data.
+  After first execution, we can use \mintinline{bash}{python devised --load}
+  option to test much faster, using those files.
+
+  \item To test tf-idf method:
+  \begin{minted}{bash}
+    python tf-idf.py
+  \end{minted}
+  \item To test term discrimination value method:
+  \begin{minted}{bash}
+    python termdisc.py
+  \end{minted}
+  This command will take significantly long time: about 3 hours.
+\end{enumerate}
+
+\section{Documentation}
+
+\begin{enumerate}
+  \item Entropy-based method
+  At first, to reduce useless calculation,
+  I decided to remove stop words from the collection.
+  I used a python module \textbf{spaCy} to remove stop words.
+  Also, I used a lemmatization function of spaCy to reduce the size of
+  vocabularies. The verbs with past tense, such as `voted', will be unified
+  with the present tense, such as `vote'.
+
+  Also, for generality, I removed some tokens those appear less than 30 times.
+  They may help for identifying individual documents, but not for categorization.
+  After calculating entropies for each term, the program writes a file about
+  vocabularies, entropies, and categories.
+  That is the file \textbf{important\_terms.json}.
+  I thought that the term which has low entropy should be treated much important.
+  I classified a term is important to a category
+  which shows highest probability among the list of categories.
+  For example, a word `finance' appears in the category `business' most frequently,
+  it should be an important term for `business'.
+  However, I removed terms those have zero entropies, such as `khodorkovsky';
+  Because zero entropy means that the term only appeared in one document.
+  Filtered important terms are written at \textbf{important\_terms\_50.json}.
+
+  As statistics, entropies are distributed from 0.0 to 2.xxx.
+  Lower entropy should be treated more important,
+  so I recommend a simple equation for calculating the term weight here:
+  \textbf{\textit{term weight} = \textit{exp}(\textit{-entropy})}.
+
+  With the equation, entropy 0.0(most important) is equal to term weight 1.0.
+  Also, entropy 2.xxx is equal to term weight nearly zero.
+  With this computed term weights,
+  I multiplied term weights to BoW(Bag-of-Words) vectors,
+  and performed a simple LinearSVC
+  (Multi-class SVM model in python module \textbf{scikit-learn}) to predict the categories from the text.
+  
+  \item tf-idf method is implemented with the simple code,
+  using scikit-learn module.
+  Tf-idf weights are computed with \textbf{TfidfVectorizer} function.
+  The LinearSVC model, like entropy-based method, is used for prediction.
+
+  \item Cosine similarities between BoW vectors is used to
+  calculate term discrtimination value.
+  Due to the method's heavy computation load(about 20000 words), it takes a long time for prediction.
+  LinearSVC model is used.
+\end{enumerate}
+
+\section{Result}
+
+\begin{table}[!htbp]
+\begin{tabular}{l|c|c|c}
+                              & Entropy-based             & Tf-idf                     & Term discrimination value \\ \hline
+\multicolumn{1}{r|}{Accuracy} & \multicolumn{1}{r|}{0.970} & \multicolumn{1}{r|}{0.9825} & \multicolumn{1}{r}{0.455}     
+\end{tabular}
+\end{table}
+
+\section{Analysis}
+
+The accuracy are quite high for first two methods.
+It shows that the term weighting method is effective
+to identify and classify the documents(text).
+However, tf-idf method's accuracy is much higher than the other methods;
+In tf-idf method, even the same terms have different weights by the document.
+This difference may make the improvement of accuracy.
+I think multiplying idf value to the entropy would make similar improvement.
+And also, if the collection's size is much smaller,
+my method also can be an effective method:
+because tf-idf methods works well in `large' dataset.
+Third method did not perform well(It is still higher than 20\% = 1/5). I think this is the side effect of simplification.
+Due to the hard load of computation, I treated all documents in one category as one document, and calculated similarities.
+This may cause an underfitting, so the low accuracy can be explained.
+More computation power and time would make a higher accuracy.
+
+\end{document}

@@ -1,0 +1,187 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{kotex}
+\usepackage{lmodern}
+\usepackage{url}
+\usepackage{cite}
+\usepackage{graphicx}
+\graphicspath{{./tm/}}
+
+\author{Junseop Ji 지준섭}
+\title{Text mining HW\#1. Proposal}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+
+To watch the trends of crimes and disasters in Korea over the 10 years,
+it is necessary to look at many news and articles and analyze them.
+It is very heavy load to do the process manually -- computational method,
+using text mining technique can make the task much easier.
+In this proposal, several methods based on textmining theories are suggested.
+The methods would be a solution to the problem --
+analyzing the trends of Korean crimes and disasters.
+
+\section{Backgrounds}
+
+\begin{enumerate}
+  \item \textbf{Part-of-Speech(POS) tagging}
+  The part-of-speech means how a word works in the sentence, such as
+  noun, pronoun, adjective, verb, adverb, preposition, conjunction, and interjection.
+  The POS parser makes a label of POS for each word.
+  \item \textbf{Named entity recognition(NER)}
+  Named entity recognition means a process that classifies
+  named-entities in text into pre-defined categories,
+  such as person, place, time, and so on.
+  \item \textbf{Sentiment analysis}
+  Sentiment analysis extracts people's emotion from the text.
+  Often models return true/false as binary output. 
+  \item \textbf{BIG KINDS}
+  \textit{BIG KINDS}\cite{bigkinds} is a web application
+  which provides the searching service for the big data of the news articles.
+  The server of the application constructs a corpus from 54 different news agencies.
+  Then it automatically performs text classification and keyword extraction.
+  After the POS analysis, NER tagging, and dependency parsing,
+  the database is filled with news with generated metadata.
+  The service can provide about 60 million news articles.
+  \item \textbf{KoNLPy}
+  \textit{KoNLPy}\cite{park2014konlpy} is a python package
+  for Korean natural language processing.
+  Supports POS tagging, parsing morphemes, and noun extraction with 5 classes(method):
+  \textit{Hannanum}, \textit{Kkma}, \textit{Komoran}, \textit{Mecab},
+  and \textit{Twitter}.
+  \item \textbf{Support vector machine(SVM)}
+  \textit{SVM} is a specific method in supervised machine learning,
+  widely used for classification.
+  During the learning process, SVM model tries to find the hyperplane
+  which divides the data(points) with maximum margin, like figure \ref{fig:svm}.
+\end{enumerate}
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[scale=0.4]{svm}
+  \caption{The example of how SVM works}
+  \label{fig:svm}
+\end{figure}
+
+\section{Goals}
+
+\begin{enumerate}
+  \item Access the Korean news collection.
+  \item Identify different types of crimes and disasters in Korea.
+  \item Show the changes(trends) in each type over the 10 years.
+  \item Analyze the causes.
+  \item Identify any changes in laws or regulations
+  legislated to mitigrate the causes after the event.
+\end{enumerate}
+
+\section{Plans}
+
+\subsection{Access the Korean news collection}
+\textit{BIG KINDS}\cite{bigkinds}, already mentioned in 2.4,
+can provide crimes \& disasters news by a search option,
+like in figure \ref{fig:bigkinds}.
+Getting only documents about happenings in Korea is also available:
+just uncheck the `국제' tab in search option.
+We can crawl the data from the results page.
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[scale=0.4]{bigkinds}
+  \caption{Search option to find crimes \& disasters news in \textit{BIG KINDS}}
+  \label{fig:bigkinds}
+\end{figure}
+
+\subsection{Identify types of crimes / disasters}
+
+There are two different major approaches to split documents with
+certain standard: \textbf{classification} and \textbf{clustering}.
+Classification method can divide a set of documents
+with high credibility and relatively low computation;
+However categories should pre-defined after processing.
+Clustering needs no pre-defining step, but needs more computation
+and need to set parameters carefully.
+
+\textit{BIG KINDS} already classified their crawled documents
+into pre-defined categories.
+The result(classification) is generated automatically using
+machine learning classification model.
+We can choose the categories set from \textit{BIG KINDS},
+      in figure \ref{fig:category},
+the set can make documents be fairly distributed.
+For example, \[ \textbf{성범죄} / \textbf{기업범죄} / \textbf{정치} / \textbf{범죄일반}\]
+is the pre-defined category set for crimes, and
+\[ \textbf{눈사태\&산사태} / \textbf{태풍} / \textbf{폭염} / \textbf{해일} /
+\textbf{화산폭발} / \textbf{가뭄} / \textbf{지진} / \textbf{홍수} \]
+can be the set for disasters.
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[scale=0.5]{category}
+  \caption{Categories used in web application \textit{BIG KINDS}}
+  \label{fig:category}
+\end{figure}
+
+As set of categories given, building a classifier can be achieved.
+According to paper\cite{textmining}, \textbf{bag-of-words}
+approach may work well.
+But for the optimization (less computation),
+removing \textit{stop words} is needed, according to the paper.
+However, unlike english, korean tokens do not simply extracted
+by splitting with whitespaces.
+Here is where \textit{KoNLPy}\cite{park2014konlpy} is needed.
+\textit{KoNLPy} supports parsing morphemes from the korean sentences --
+we can remove useless morphemes from the sentence, like \textit{Josa}.
+Then using SVM as a classifier will be a proper choice.
+SVM model should return probabilities for each category as an output,
+taking the category which has maximum probability will work.
+The process can be easily done with scikit-learn\cite{scikit-learn} python library.
+
+
+\subsection{Show the changes}
+
+Part-of-speech parsing may suit for this task.
+It is not difficult to think that most of the repeated words
+those represent the characteristics of the document is noun.
+With \textit{KoNLPy}, we can tag the tokens in the sentences, and extract nouns.
+For a typical period, the frequency of nouns will represent
+the trend in the period.
+When we are curious about the social responses, Twitter API may give a help.
+Twitter provides official search API;
+After we extract the trendy nouns from the data,
+we can crawl the responses(tweets) written during the period.
+Sentiment analysis can be done with the data.
+We can build a simple script which returns positive/negative sentiment
+with NRC Word-emotion lexicon\cite{Mohammad13}.
+Just adding whole sentiment scores of the words in the tweet may decide
+the tweet is positive or not.
+
+\subsection{Analyze the causes}
+
+This may be the hardest part of the problem.
+I suggest using the \textit{Knowledge-CNN} structure from
+existing paper\cite{li2019knowledge} by Li Pengfei.
+The paper introduces the model with supervised convolutional deep neural network.
+The model learns its `knowledge', and returns causal relations.
+If we make a training set of the news articles,
+the model will work well on our dataset, too.
+
+
+\subsection{Identify any changes in laws or regulations}
+
+Named entity recognition just fits for the problem.
+According to NAVER NER corpus\cite{nercorpus},
+there is a label `ORG', means organization.
+The label includes not only organization,
+also includes groups, congress, or the conference.
+We can use state of the art model from the source,
+and extract the ORG labeled tokens.
+The most frequent phrase that co-occurs with the ORG token
+will mean the laws or regulations related to that one. 
+
+\bibliographystyle{unsrt}
+\bibliography{textmining-hw1-proposal}
+
+\end{document}

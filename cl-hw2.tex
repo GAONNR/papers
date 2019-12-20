@@ -1,0 +1,234 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{kotex}
+\usepackage{lmodern}
+\usepackage{cite}
+\usepackage{minted}
+
+\author{20193601 지준섭}
+\title{CS579 Homework\#2}
+
+\begin{document}
+
+\maketitle
+
+\section{Chapter 7}
+\textbf{Problem}: The formal language
+$ a^{n}b^{2m}c^{2m}d^{n} $ consists of all strings of the following form:
+an unbroken block of $a$s followed by an unbroken block of $b$s followed by
+an unbroken block of $c$s followed by an unbroken block of $d$s,
+such that the $a$ and $d$ blocks are exactly the same length,
+and the $b$ and $c$ blocks are also exactly the same length
+and furthermore consist of an even number of $b$s and $c$s respectively.
+For example, $\epsilon$, $abbccd$, and $aabbbbccccdd$ all belong to $a^{n}b{2m}c^{2m}d^{n}$.
+Write a DCG that generates this language. \\
+
+\noindent
+\textbf{Solution}:
+The main idea for the problem is that,
+the string satisfies the language is always surrounded by one $a$ and $d$,
+or two $b$s and $c$s, if the string is not $\epsilon$.
+So I defined two kind of strings: \mintinline{prolog}{asd}, and \mintinline{prolog}{bbscc}.
+\begin{enumerate}
+  \item \mintinline{prolog}{asd}: A sentence surrounded with a and d.
+  \mintinline{prolog}{asd} can be represented as
+  \mintinline{prolog}{[a], asd, [d]} again, or \mintinline{prolog}{[a], bbscc, [d]}.
+
+  \item \mintinline{prolog}{bbsdd}: A sentence surrounded with bb and cc.
+  \mintinline{prolog}{bbsdd} can be a empty string,
+  or \mintinline{prolog}{[b, b], bbscc, [c, c]}.
+\end{enumerate}
+And here is the prolog code below.
+
+\begin{minted}[breaklines]{prolog}
+s --> [a], asd, [d].
+s --> [a], bbscc, [d].
+s --> bbscc.
+asd --> [a], asd, [d].
+asd --> [a], bbscc, [d].
+bbscc --> [b, b], bbscc, [c, c].
+bbscc --> [].
+\end{minted}
+
+\section{Chapter 8}
+\textbf{Problem}: First, bring together all the things we have learned
+about DCGs for English into one DCG.
+In particular, in the text we saw how to use extra arguments
+to deal with the subject/object distinction,
+and in the exercises you were asked to use additional arguments
+to deal with the singular/plural distinction.
+Write a DCG which handles both.
+Moreover, write the DCG in such a way that
+it will produce parse trees, and makes use of a separate lexicon.
+Once you have done this, extend the DCG so that
+noun phrases can be modified by adjectives
+and simple prepositional phrases
+(that is, it should be able to handle noun phrases such as
+“the small frightened woman on the table” or “the big fat cow under the shower”).
+Then, further extend it so that the distinction between
+first, second, and third person pronouns is correctly handled
+(both in subject and object form). \\
+
+\noindent
+\textbf{Solution}:
+Starting from the DCG we learned from the lecture, subject/object version:
+\begin{minted}[breaklines]{prolog}
+s --> np(subject), vp.
+
+np(_) --> det, n.
+np(X) --> pro(X).
+
+vp --> v, np(object).
+vp --> v.
+
+det --> [the].
+det --> [a].
+
+n --> [woman].
+n --> [man].
+
+pro(subject) --> [he].
+pro(subject) --> [she].
+pro(object) --> [him].
+pro(object) --> [her].
+
+v --> [shoots].
+\end{minted}
+
+\noindent
+Add singular/plural feature:
+\begin{minted}[breaklines]{prolog}
+%% SP: variable for singular / plural
+s --> np(subject, SP), vp(SP).
+
+np(_, SP) --> det(SP), n(SP).
+np(X, SP) --> pro(X, SP).
+
+vp(SP) --> v(SP), np(object, _).
+vp(SP) --> v(SP).
+
+det(singular) --> [the].
+det(singular) --> [a].
+det(plural) --> [the].
+
+n(singular) --> [woman].
+n(singular) --> [man].
+n(plural) --> [women].
+n(plural) --> [men].
+
+pro(subject, singular) --> [he].
+pro(subject, singular) --> [she].
+pro(subject, plural) --> [they].
+pro(object, singular) --> [him].
+pro(object, singular) --> [her].
+pro(object, plural) --> [them].
+
+v(singular) --> [shoots].
+v(plural) --> [shoot].
+\end{minted}
+
+\noindent
+Add parse tree \& lexicon feature:
+\begin{minted}[breaklines]{prolog}
+s(SP, s(SP, NP, VP)) --> np(subject, SP, NP), vp(SP, VP).
+
+np(_, SP, np(SP, DET, N)) --> det(SP, DET), n(SP, N).
+np(X, SP, np(SP, N)) --> pro(X, SP, N).
+
+vp(SP, vp(SP, V, NP)) --> v(SP, V), np(object, _, NP).
+vp(SP, vp(SP, V)) --> v(SP, V).
+
+det(SP, det(SP, Word)) --> [Word], {lex(Word, SP, det)}.
+n(SP, n(SP, Word)) --> [Word], {lex(Word, SP, n)}.
+v(SP, v(SP, Word)) --> [Word], {lex(Word, SP, v)}.
+pro(X, SP, pro(X, SP, Word)) --> [Word], {lex(Word, X, SP, pro)}.
+
+lex(a, singular, det).
+lex(the, _, det).
+lex(woman, singular, n).
+lex(man, singular, n).
+lex(women, plural, n).
+lex(men, plural, n).
+lex(shoots, singular, v).
+lex(shoot, singular, v).
+lex(he, subject, singular, pro).
+lex(she, subject, singular, pro).
+lex(they, subject, plural, pro).
+lex(him, object, singular, pro).
+lex(her, object, singular, pro).
+lex(them, object, plural, pro).
+\end{minted}
+
+\noindent
+Add adjective\&preposition feature:
+\begin{minted}[breaklines]{prolog}
+s(SP, s(SP, NP, VP)) --> np(subject, SP, NP), vp(SP, VP).
+
+np(_, SP, np(SP, DET, N)) --> det(SP, DET), n(SP, N).
+np(X, SP, np(SP, N)) --> pro(X, SP, N).
+np(_, SP, np(DET, AP, N)) --> det(SP, DET), ap(AP), n(SP, N).
+np(_, SP, np(DET, N, PP)) --> det(SP, DET), n(SP, N), pp(PP).
+np(_, SP, np(DET, AP, N, PP)) --> det(SP, DET), ap(AP), n(SP, N), pp(PP).
+
+vp(SP, vp(SP, V, NP)) --> v(SP, V), np(object, _, NP).
+vp(SP, vp(SP, V)) --> v(SP, V).
+
+ap(ap(ADJ)) --> adj(ADJ).
+ap(ap(ADJ1, ADJ2)) --> adj(ADJ1), adj(ADJ2).
+
+pp(pp(PRE, NP)) --> pre(PRE), np(object, _, NP).
+
+det(SP, det(SP, Word)) --> [Word], {lex(Word, SP, det)}.
+n(SP, n(SP, Word)) --> [Word], {lex(Word, SP, n)}.
+v(SP, v(SP, Word)) --> [Word], {lex(Word, SP, v)}.
+pro(X, SP, pro(X, SP, Word)) --> [Word], {lex(Word, X, SP, pro)}.
+adj(adj(Word)) --> [Word], {lex(Word, adj)}.
+pre(pre(Word)) --> [Word], {lex(Word, pre)}.
+
+lex(a, singular, det).
+lex(the, _, det).
+lex(woman, singular, n).
+lex(man, singular, n).
+lex(women, plural, n).
+lex(men, plural, n).
+lex(table, singular, n).
+lex(tables, plural, n).
+lex(cow, singular, n).
+lex(cows, plural, n).
+lex(shower, singular, n).
+lex(showers, plural, n).
+lex(shoots, singular, v).
+lex(shoot, singular, v).
+lex(i, subject, plural, pro).
+lex(you, subject, plural, pro).
+lex(he, subject, singular, pro).
+lex(she, subject, singular, pro).
+lex(we, subject, plural, pro).
+lex(they, subject, plural, pro).
+lex(me, object, plural, pro).
+lex(you, object, plural, pro).
+lex(him, object, singular, pro).
+lex(her, object, singular, pro).
+lex(us, object, plural, pro).
+lex(them, object, plural, pro).
+lex(small, adj).
+lex(frightened, adj).
+lex(big, adj).
+lex(fat, adj).
+lex(on, pre).
+lex(under, pre).
+lex(in, pre).
+lex(at, pre).
+\end{minted}
+
+\noindent
+Here is the execution example:
+\begin{minted}[breaklines]{prolog}
+?- s(A, B, [the, woman, on, the, table, shoot, him], []).
+A = singular,
+B = s(singular, np(det(singular, the), n(singular, woman), pp(pre(on), np(singular, det(singular, the), n(singular, table)))), vp(singular, v(singular, shoot), np(singular, pro(object, singular, him)))) ;  
+?- s(A, B, [the, small, frightened, woman, in, a, shower, shoot, them], []).
+A = singular,
+B = s(singular, np(det(singular, the), ap(adj(small), adj(frightened)), n(singular, woman), pp(pre(in), np(singular, det(singular, a), n(singular, shower)))), vp(singular, v(singular, shoot), np(plural, pro(object, plural, them)))) ;
+\end{minted}
+\end{document}
